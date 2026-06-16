@@ -375,6 +375,10 @@ func (c *conn) extQuery(sql string, args []driver.Value) (*rows, error) {
 	if err := c.sendMsg('B', bb); err != nil {
 		return nil, err
 	}
+	// Describe portal — required to receive RowDescription before data rows
+	if err := c.sendMsg('D', []byte("P\x00")); err != nil {
+		return nil, err
+	}
 	// Execute + Sync
 	if err := c.sendMsg('E', append([]byte("\x00"), 0, 0, 0, 0)); err != nil {
 		return nil, err
