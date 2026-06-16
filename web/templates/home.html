@@ -474,6 +474,79 @@
       .footer { flex-direction:column; text-align:center; }
       .footer-copy { text-align:center; }
     }
+    /* ── Stories (video) section ───────────────────────────── */
+    .stories-section { background: var(--surface-2); overflow:hidden; }
+    .stories-section .section-label { color: var(--forest-mid); }
+    .stories-section .section-label::after { background: var(--forest-mid); }
+    .stories-scroll {
+      display: flex; gap: 1.25rem; margin-top: 2.5rem;
+      overflow-x: auto; padding-bottom: 1rem; scroll-snap-type: x mandatory;
+      -webkit-overflow-scrolling: touch; cursor: grab;
+    }
+    .stories-scroll::-webkit-scrollbar { height: 4px; }
+    .stories-scroll::-webkit-scrollbar-track { background: var(--border); border-radius: 2px; }
+    .stories-scroll::-webkit-scrollbar-thumb { background: var(--forest); border-radius: 2px; }
+    .stories-scroll.grabbing { cursor: grabbing; }
+    .story-card {
+      flex: 0 0 220px; height: 380px; border-radius: 20px;
+      position: relative; overflow: hidden;
+      scroll-snap-align: start;
+      box-shadow: 8px 12px 0 0 rgba(26,58,42,.14);
+      border: 1.5px solid var(--border);
+    }
+    .story-video {
+      width: 100%; height: 100%; object-fit: cover;
+      display: block; background: var(--forest);
+    }
+    /* placeholder gradient shown when video hasn't loaded / no src */
+    .story-placeholder {
+      position: absolute; inset: 0;
+      display: flex; flex-direction: column;
+      align-items: center; justify-content: center;
+      font-size: 2.5rem; letter-spacing: .1em;
+    }
+    .story-placeholder.p1 { background: linear-gradient(160deg, #1a3a2a 0%, #2d6b4a 100%); }
+    .story-placeholder.p2 { background: linear-gradient(160deg, #2a1a0a 0%, #6b3a1a 100%); }
+    .story-placeholder.p3 { background: linear-gradient(160deg, #0a1a2a 0%, #1a3a5a 100%); }
+    .story-placeholder.p4 { background: linear-gradient(160deg, #1a0a2a 0%, #4a1a6a 100%); }
+    .story-placeholder.p5 { background: linear-gradient(160deg, #2a2a0a 0%, #5a5a1a 100%); }
+    .story-overlay {
+      position: absolute; bottom: 0; left: 0; right: 0;
+      background: linear-gradient(to top, rgba(0,0,0,.82) 0%, rgba(0,0,0,.3) 60%, transparent 100%);
+      padding: 1.25rem 1rem .9rem;
+    }
+    .story-tag {
+      display: inline-block; margin-bottom: .4rem;
+      font-size: .6rem; font-weight: 700; letter-spacing: .1em; text-transform: uppercase;
+      color: var(--gold-bright);
+      background: rgba(200,217,106,.15); border: 1px solid rgba(200,217,106,.3);
+      padding: .15rem .5rem; border-radius: 20px;
+    }
+    .story-name {
+      font-size: .95rem; font-weight: 700; color: #fff;
+      line-height: 1.2; margin-bottom: .25rem;
+    }
+    .story-desc {
+      font-size: .72rem; color: rgba(255,255,255,.65);
+      line-height: 1.4;
+    }
+    .story-stat {
+      display: flex; align-items: center; gap: .35rem;
+      margin-top: .55rem; font-size: .7rem; font-weight: 600;
+      color: var(--gold-bright);
+    }
+    .story-stat svg { flex-shrink: 0; }
+    /* Play indicator pulse */
+    .story-playing {
+      position: absolute; top: .75rem; right: .75rem;
+      width: 8px; height: 8px; background: #6dbf8a; border-radius: 50%;
+      animation: pulse-dot 2s ease-in-out infinite;
+    }
+
+    @media(max-width:600px){
+      .story-card { flex: 0 0 180px; height: 320px; }
+    }
+
     @media(max-width:600px){
       .nav-links { display:none; }
       .stats-inner { grid-template-columns:repeat(2,1fr); }
@@ -769,6 +842,113 @@
   </div>
 </section>
 
+<!-- ── Stories ─────────────────────────────────────────────── -->
+<section class="section stories-section">
+  <div class="section-inner">
+    <p class="section-label reveal">Real people. Real impact.</p>
+    <h2 class="section-title reveal delay-1">Kenyans everywhere<br>banking differently.</h2>
+    <p class="section-sub reveal delay-2">From Kibera market stalls to Kisumu boda boda stages — instant payments, near-zero fees, and money that actually works.</p>
+
+    <div class="stories-scroll reveal delay-2" id="storiesScroll">
+
+      <!-- Story 1 -->
+      <div class="story-card">
+        <video class="story-video" autoplay muted loop playsinline preload="none"
+               poster="/static/videos/story-wanjiru-poster.jpg"
+               src="/static/videos/story-wanjiru.mp4"></video>
+        <div class="story-placeholder p1" id="ph1">🛒</div>
+        <div class="story-playing"></div>
+        <div class="story-overlay">
+          <span class="story-tag">Nairobi · Kibera</span>
+          <div class="story-name">Wanjiru Kamau</div>
+          <div class="story-desc">Mama mboga, mother of three. Collects M-Pesa payments from 40+ customers daily.</div>
+          <div class="story-stat">
+            <svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polygon points="13 2 3 14 12 14 11 22 21 10 12 10 13 2"/></svg>
+            Paid out in under 2 seconds
+          </div>
+        </div>
+      </div>
+
+      <!-- Story 2 -->
+      <div class="story-card">
+        <video class="story-video" autoplay muted loop playsinline preload="none"
+               poster="/static/videos/story-otieno-poster.jpg"
+               src="/static/videos/story-otieno.mp4"></video>
+        <div class="story-placeholder p2" id="ph2">🏍️</div>
+        <div class="story-playing"></div>
+        <div class="story-overlay">
+          <span class="story-tag">Kisumu · Kondele</span>
+          <div class="story-name">Otieno Odhiambo</div>
+          <div class="story-desc">Boda boda rider. Splits earnings into savings daily. Chama member since launch.</div>
+          <div class="story-stat">
+            <svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polygon points="13 2 3 14 12 14 11 22 21 10 12 10 13 2"/></svg>
+            KES 0.00 transfer fee
+          </div>
+        </div>
+      </div>
+
+      <!-- Story 3 -->
+      <div class="story-card">
+        <video class="story-video" autoplay muted loop playsinline preload="none"
+               poster="/static/videos/story-amina-poster.jpg"
+               src="/static/videos/story-amina.mp4"></video>
+        <div class="story-placeholder p3" id="ph3">🧵</div>
+        <div class="story-playing"></div>
+        <div class="story-overlay">
+          <span class="story-tag">Mombasa · Majengo</span>
+          <div class="story-name">Amina Hassan</div>
+          <div class="story-desc">Tailor & chama chairwoman. Runs a 12-member women's savings circle on YeboBank.</div>
+          <div class="story-stat">
+            <svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><rect x="3" y="11" width="18" height="11" rx="2"/><path d="M7 11V7a5 5 0 0 1 10 0v4"/></svg>
+            5% APY on group savings
+          </div>
+        </div>
+      </div>
+
+      <!-- Story 4 -->
+      <div class="story-card">
+        <video class="story-video" autoplay muted loop playsinline preload="none"
+               poster="/static/videos/story-mwangi-poster.jpg"
+               src="/static/videos/story-mwangi.mp4"></video>
+        <div class="story-placeholder p4" id="ph4">🔨</div>
+        <div class="story-playing"></div>
+        <div class="story-overlay">
+          <span class="story-tag">Eldoret · Langas</span>
+          <div class="story-name">Mwangi Njoroge</div>
+          <div class="story-desc">Fundi mchundo. Gets paid per job, saves weekly, locks sats to grow a business fund.</div>
+          <div class="story-stat">
+            <svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polygon points="13 2 3 14 12 14 11 22 21 10 12 10 13 2"/></svg>
+            Global Lightning payments
+          </div>
+        </div>
+      </div>
+
+      <!-- Story 5 -->
+      <div class="story-card">
+        <video class="story-video" autoplay muted loop playsinline preload="none"
+               poster="/static/videos/story-akinyi-poster.jpg"
+               src="/static/videos/story-akinyi.mp4"></video>
+        <div class="story-placeholder p5" id="ph5">🌽</div>
+        <div class="story-playing"></div>
+        <div class="story-overlay">
+          <span class="story-tag">Nakuru · Bondeni</span>
+          <div class="story-name">Akinyi Atieno</div>
+          <div class="story-desc">Smallholder farmer. Receives payments from buyers instantly — no middleman, no delay.</div>
+          <div class="story-stat">
+            <svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polyline points="9 11 12 14 22 4"/><path d="M21 12v7a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11"/></svg>
+            Verified in minutes
+          </div>
+        </div>
+      </div>
+
+    </div>
+
+    <p style="margin-top:1.25rem;font-size:.8rem;color:var(--text-dim);text-align:center;">
+      Drag to explore · Videos play automatically
+    </p>
+  </div>
+</section>
+
 <!-- ── Mission ─────────────────────────────────────────────── -->
 <section class="section mission-section">
   <div class="mission-quote">
@@ -883,6 +1063,36 @@
       hero.style.backgroundPositionY = (y * 0.3) + 'px';
     }
   }, { passive: true });
+
+  // ── Stories drag-to-scroll ─────────────────────────────────
+  const scroll = document.getElementById('storiesScroll');
+  if (scroll) {
+    let isDown = false, startX, scrollLeft;
+    scroll.addEventListener('mousedown', e => {
+      isDown = true; scroll.classList.add('grabbing');
+      startX = e.pageX - scroll.offsetLeft;
+      scrollLeft = scroll.scrollLeft;
+    });
+    scroll.addEventListener('mouseleave', () => { isDown = false; scroll.classList.remove('grabbing'); });
+    scroll.addEventListener('mouseup',    () => { isDown = false; scroll.classList.remove('grabbing'); });
+    scroll.addEventListener('mousemove', e => {
+      if (!isDown) return;
+      e.preventDefault();
+      const x = e.pageX - scroll.offsetLeft;
+      scroll.scrollLeft = scrollLeft - (x - startX) * 1.4;
+    });
+  }
+
+  // ── Hide placeholder once video can play ───────────────────
+  document.querySelectorAll('.story-video').forEach(v => {
+    const ph = v.nextElementSibling;
+    if (!ph) return;
+    const hide = () => ph.style.display = 'none';
+    v.addEventListener('canplay', hide);
+    // If video src is empty or missing, keep placeholder visible
+    if (!v.src || v.src === window.location.href) return;
+    v.load();
+  });
 })();
 </script>
 </body>
