@@ -83,6 +83,7 @@ func main() {
 	mux.Handle("/chama/create", auth(http.HandlerFunc(handlers.ChamaCreate)))
 	mux.Handle("/chama/contribute", auth(http.HandlerFunc(handlers.ChamaContribute)))
 	mux.Handle("/settings", auth(http.HandlerFunc(handlers.Settings)))
+	mux.Handle("/settings/password", auth(http.HandlerFunc(handlers.SettingsPassword)))
 
 	// Agent (authenticated + role guard)
 	agentAuth := func(h http.Handler) http.Handler {

@@ -9,6 +9,58 @@ import (
 	"github.com/yebobank/yebobank/internal/utils"
 )
 
+func SettingsPassword(w http.ResponseWriter, r *http.Request) {
+	if r.Method != http.MethodPost {
+		http.Redirect(w, r, "/settings", http.StatusSeeOther)
+		return
+	}
+	userID := middleware.UserID(r)
+	current := r.FormValue("current_password")
+	newPass := r.FormValue("new_password")
+	confirm := r.FormValue("confirm_password")
+
+	if newPass != confirm {
+		renderSettingsWithError(w, r, userID, "New passwords do not match")
+		return
+	}
+	if len(newPass) < 8 {
+		renderSettingsWithError(w, r, userID, "New password must be at least 8 characters")
+		return
+	}
+
+	var storedHash string
+	if err := db.DB.QueryRow(`SELECT password_hash FROM users WHERE id=$1`, userID).Scan(&storedHash); err != nil {
+		renderSettingsWithError(w, r, userID, "Could not verify current password")
+		return
+	}
+	if !utils.CheckPassword(current, storedHash) {
+		renderSettingsWithError(w, r, userID, "Current password is incorrect")
+		return
+	}
+
+	newHash, err := utils.HashPassword(newPass)
+	if err != nil {
+		renderSettingsWithError(w, r, userID, "Could not update password")
+		return
+	}
+	db.DB.Exec(`UPDATE users SET password_hash=$1, updated_at=NOW() WHERE id=$2`, newHash, userID) //nolint:errcheck
+	// Invalidate all other sessions
+	db.DB.Exec(`DELETE FROM sessions WHERE user_id=$1`, userID) //nolint:errcheck
+
+	http.Redirect(w, r, "/settings?pwsaved=1", http.StatusSeeOther)
+}
+
+func renderSettingsWithError(w http.ResponseWriter, r *http.Request, userID int64, errMsg string) {
+	var fullName, email, phone, language, kyc, createdAt string
+	db.DB.QueryRow(`SELECT full_name, COALESCE(email,''), phone, language, kyc_status, created_at FROM users WHERE id=$1`, userID).
+		Scan(&fullName, &email, &phone, &language, &kyc, &createdAt) //nolint:errcheck
+	renderTemplate(w, r, "customer/settings.html", map[string]interface{}{
+		"FullName": fullName, "Email": email, "Phone": phone,
+		"Language": language, "KYC": kyc, "CreatedAt": createdAt,
+		"PwError": errMsg,
+	})
+}
+
 func Dashboard(w http.ResponseWriter, r *http.Request) {
 	walletID := middleware.WalletID(r)
 	userID := middleware.UserID(r)
@@ -92,11 +144,14 @@ func History(w http.ResponseWriter, r *http.Request) {
 func Settings(w http.ResponseWriter, r *http.Request) {
 	userID := middleware.UserID(r)
 	if r.Method == http.MethodGet {
-		var fullName, email, phone, language string
-		db.DB.QueryRow(`SELECT full_name, email, phone, language FROM users WHERE id=$1`, userID).
-			Scan(&fullName, &email, &phone, &language) //nolint:errcheck
+		var fullName, email, phone, language, kyc, createdAt string
+		db.DB.QueryRow(`SELECT full_name, COALESCE(email,''), phone, language, kyc_status, created_at FROM users WHERE id=$1`, userID).
+			Scan(&fullName, &email, &phone, &language, &kyc, &createdAt) //nolint:errcheck
 		renderTemplate(w, r, "customer/settings.html", map[string]interface{}{
-			"FullName": fullName, "Email": email, "Phone": phone, "Language": language,
+			"FullName": fullName, "Email": email, "Phone": phone,
+			"Language": language, "KYC": kyc, "CreatedAt": createdAt,
+			"Saved":   r.URL.Query().Get("saved") == "1",
+			"PwSaved": r.URL.Query().Get("pwsaved") == "1",
 		})
 		return
 	}

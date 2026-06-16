@@ -350,6 +350,7 @@ label { font-size: 0.9rem; font-weight: 500; }
 .badge-green  { background: var(--green-dim);  color: var(--green); }
 .badge-red    { background: var(--red-dim);    color: var(--red); }
 .badge-amber  { background: var(--amber-dim);  color: var(--amber); }
+.badge-gold   { background: rgba(184,168,50,0.12); color: var(--gold); }
 .badge-forest { background: var(--forest-dim); color: var(--forest); }
 .badge-terra  { background: rgba(196,98,45,0.1); color: var(--terra); }
 
