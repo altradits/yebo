@@ -1,4 +1,45 @@
 {{template "layout.html" .}}
 {{define "content"}}
-<!-- TODO: chama -->
+<div class="page-header">
+  <h1>Chama</h1>
+  <p>Your community savings groups</p>
+</div>
+
+{{if .Error}}<div class="alert alert-error">{{.Error}}</div>{{end}}
+
+<div style="margin-bottom:1.5rem;">
+  <a href="/chama/create" class="btn btn-primary">+ New Chama</a>
+</div>
+
+{{if .Chamas}}
+<div style="display:grid;gap:1rem;">
+  {{range .Chamas}}
+  <div class="card" style="display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:1rem;">
+    <div>
+      <div style="font-size:1.05rem;font-weight:700;margin-bottom:0.25rem;">{{.Name}}</div>
+      <div style="font-size:0.85rem;color:var(--text-muted);">{{.Desc}}</div>
+      <div style="margin-top:0.5rem;display:flex;gap:1rem;font-size:0.82rem;color:var(--text-dim);">
+        <span>{{.Members}} members</span>
+        <span class="badge {{if eq .Status "active"}}badge-green{{else}}badge-forest{{end}}">{{.Status}}</span>
+      </div>
+    </div>
+    <div style="text-align:right;">
+      <div style="font-size:1.3rem;font-weight:700;font-family:var(--mono);color:var(--forest);">{{.BalanceSats}} sats</div>
+      <form method="POST" action="/chama/contribute" style="margin-top:0.75rem;display:flex;gap:0.5rem;align-items:center;">
+        <input type="hidden" name="chama_id" value="{{.ID}}">
+        <input type="number" name="amount_sats" class="form-control mono" placeholder="sats" min="1" style="width:130px;" required>
+        <button type="submit" class="btn btn-primary" style="padding:0.5rem 1rem;">Contribute</button>
+      </form>
+    </div>
+  </div>
+  {{end}}
+</div>
+{{else}}
+<div class="card" style="text-align:center;padding:3rem 1rem;">
+  <div style="font-size:2rem;margin-bottom:0.75rem;">🤝</div>
+  <div style="font-weight:600;margin-bottom:0.5rem;">No chamas yet</div>
+  <div style="color:var(--text-muted);font-size:0.9rem;margin-bottom:1.5rem;">Create a group savings circle with your community.</div>
+  <a href="/chama/create" class="btn btn-primary">Create your first chama</a>
+</div>
+{{end}}
 {{end}}

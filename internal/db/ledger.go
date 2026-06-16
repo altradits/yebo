@@ -25,17 +25,20 @@ func DebitSats(tx *sql.Tx, walletID, amount int64, entryType, refID, note string
 
 func record(tx *sql.Tx, walletID, delta int64, entryType, refID, note string, actorID *int64) error {
 	var balanceAfter int64
+	// Guard against the CHECK (balance_sats >= 0) constraint firing before Go sees
+	// the negative value — add the condition to the WHERE clause so the UPDATE is
+	// a no-op (returns ErrNoRows) instead of a constraint violation.
 	err := tx.QueryRow(`
 		UPDATE wallets
 		SET balance_sats = balance_sats + $1, updated_at = NOW()
-		WHERE id = $2
+		WHERE id = $2 AND balance_sats + $1 >= 0
 		RETURNING balance_sats
 	`, delta, walletID).Scan(&balanceAfter)
+	if err == sql.ErrNoRows {
+		return fmt.Errorf("ledger: insufficient balance in wallet %d", walletID)
+	}
 	if err != nil {
 		return fmt.Errorf("ledger: update wallet %d: %w", walletID, err)
-	}
-	if balanceAfter < 0 {
-		return fmt.Errorf("ledger: insufficient balance in wallet %d", walletID)
 	}
 	_, err = tx.Exec(`
 		INSERT INTO ledger_entries

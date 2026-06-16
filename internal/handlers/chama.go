@@ -50,21 +50,27 @@ func ChamaCreate(w http.ResponseWriter, r *http.Request) {
 	tx, _ := db.DB.Begin()
 	defer tx.Rollback() //nolint:errcheck
 
-	// Create a wallet for the chama
+	// Chama wallet has no individual owner — user_id is NULL
 	var walletID int64
-	tx.QueryRow(`INSERT INTO wallets (user_id) VALUES ($1) RETURNING id`, userID).Scan(&walletID) //nolint:errcheck
+	if err := tx.QueryRow(`INSERT INTO wallets (user_id) VALUES (NULL) RETURNING id`).Scan(&walletID); err != nil {
+		renderTemplate(w, r, "customer/chama_create.html", map[string]interface{}{"Error": "Could not create chama wallet"})
+		return
+	}
 
 	var chamaID int64
-	tx.QueryRow(`
+	if err := tx.QueryRow(`
 		INSERT INTO chamas (name, description, wallet_id, created_by, max_members)
 		VALUES ($1, $2, $3, $4, $5) RETURNING id
-	`, name, description, walletID, userID, maxMembers).Scan(&chamaID) //nolint:errcheck
+	`, name, description, walletID, userID, maxMembers).Scan(&chamaID); err != nil {
+		renderTemplate(w, r, "customer/chama_create.html", map[string]interface{}{"Error": "Could not create chama"})
+		return
+	}
 
 	tx.Exec(`INSERT INTO chama_members (chama_id, user_id, role) VALUES ($1, $2, 'admin')`,
 		chamaID, userID) //nolint:errcheck
 	tx.Commit()          //nolint:errcheck
 
-	http.Redirect(w, r, fmt.Sprintf("/chama/%d", chamaID), http.StatusSeeOther)
+	http.Redirect(w, r, "/chama", http.StatusSeeOther)
 }
 
 func ChamaContribute(w http.ResponseWriter, r *http.Request) {
