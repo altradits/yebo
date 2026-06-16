@@ -1,0 +1,50 @@
+{{template "layout.html" .}}
+{{define "content"}}
+<div class="page-header">
+  <h1>Deposit</h1>
+  <p>Add funds to your YeboBank account</p>
+</div>
+
+{{if .Error}}<div class="alert alert-error">{{.Error}}</div>{{end}}
+{{if .Success}}<div class="alert alert-success">{{.Success}}</div>{{end}}
+
+<div style="display:grid;gap:1.5rem;grid-template-columns:repeat(auto-fit,minmax(300px,1fr));">
+
+  <!-- M-Pesa deposit -->
+  <div class="card">
+    <h3 style="margin-bottom:1rem;">
+      <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="var(--terra)" stroke-width="2" style="display:inline;vertical-align:middle;margin-right:0.4rem;"><rect x="5" y="2" width="14" height="20" rx="2"/><line x1="12" y1="18" x2="12.01" y2="18"/></svg>
+      Via M-Pesa
+    </h3>
+    <form method="POST" action="/deposit/mpesa">
+      <div class="form-group">
+        <label for="phone">M-Pesa phone</label>
+        <input type="tel" id="phone" name="phone" class="form-control" placeholder="+254 700 000 000" required>
+      </div>
+      <div class="form-group">
+        <label for="amount_kes">Amount (KES)</label>
+        <input type="number" id="amount_kes" name="amount_kes" class="form-control" placeholder="500" min="10" data-convert-from="kes" data-convert-target="kes-preview" required>
+        <div class="form-hint mono" id="kes-preview">≈ 0 sats</div>
+      </div>
+      <button type="submit" class="btn btn-primary btn-block">Send STK Push</button>
+    </form>
+  </div>
+
+  <!-- Lightning deposit -->
+  <div class="card">
+    <h3 style="margin-bottom:1rem;">
+      <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="var(--gold)" stroke-width="2" style="display:inline;vertical-align:middle;margin-right:0.4rem;"><polygon points="13 2 3 14 12 14 11 22 21 10 12 10 13 2"/></svg>
+      Via Lightning
+    </h3>
+    <form method="POST" action="/deposit/lightning">
+      <div class="form-group">
+        <label for="amount_sats">Amount (sats)</label>
+        <input type="number" id="amount_sats" name="amount_sats" class="form-control mono" placeholder="10000" min="1" data-convert-from="sats" data-convert-target="sats-preview" required>
+        <div class="form-hint mono" id="sats-preview">≈ KES 0</div>
+      </div>
+      <button type="submit" class="btn btn-primary btn-block">Generate Invoice</button>
+    </form>
+  </div>
+
+</div>
+{{end}}

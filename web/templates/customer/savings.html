@@ -1,0 +1,42 @@
+{{template "layout.html" .}}
+{{define "content"}}
+<div class="page-header">
+  <h1>Savings</h1>
+  <p>Lock sats for 30 days and earn interest</p>
+</div>
+
+<div style="display:flex;gap:1rem;margin-bottom:1.5rem;flex-wrap:wrap;">
+  <div class="stat-tile">
+    <div class="label">Available</div>
+    <div class="value">{{.BalanceSats}}</div>
+    <div class="sub">≈ KES {{printf "%.2f" .BalanceKES}}</div>
+  </div>
+</div>
+
+<div style="margin-bottom:1.5rem;">
+  <a href="/savings/lock" class="btn btn-primary">Lock Sats</a>
+</div>
+
+<div class="card">
+  <div class="card-header">Your Savings Locks</div>
+  {{if .Locks}}
+  <div class="table-wrap">
+    <table>
+      <thead><tr><th>Amount (sats)</th><th>Status</th><th>Unlocks</th><th>Interest Earned</th></tr></thead>
+      <tbody>
+      {{range .Locks}}
+      <tr>
+        <td class="td-mono">{{.AmountSats}}</td>
+        <td><span class="badge {{if eq .Status "active"}}badge-green{{else}}badge-forest{{end}}">{{.Status}}</span></td>
+        <td>{{.UnlocksAt}}</td>
+        <td class="td-mono" style="color:var(--gold);">+{{.InterestEarned}}</td>
+      </tr>
+      {{end}}
+      </tbody>
+    </table>
+  </div>
+  {{else}}
+  <p style="color:var(--text-dim);padding:1rem 0;font-size:0.9rem;">No active savings locks.</p>
+  {{end}}
+</div>
+{{end}}

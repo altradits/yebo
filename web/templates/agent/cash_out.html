@@ -1,0 +1,19 @@
+{{template "layout.html" .}}
+{{define "content"}}
+<div class="page-header"><h1>Cash Out</h1><p>Debit a customer's account when they collect cash</p></div>
+{{if .Error}}<div class="alert alert-error">{{.Error}}</div>{{end}}
+{{if .Success}}<div class="alert alert-success">{{.Success}}</div>{{end}}
+<div class="card" style="max-width:440px;">
+  <form method="POST" action="/agent/cashout">
+    <div class="form-group">
+      <label>Customer phone</label>
+      <input type="tel" name="customer_phone" class="form-control" placeholder="+254 700 000 000" required>
+    </div>
+    <div class="form-group">
+      <label>Amount (sats)</label>
+      <input type="number" name="amount_sats" class="form-control mono" placeholder="50000" min="1" required>
+    </div>
+    <button type="submit" class="btn btn-primary btn-block">Debit Customer &amp; Hand Over Cash</button>
+  </form>
+</div>
+{{end}}

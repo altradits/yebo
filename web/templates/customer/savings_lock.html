@@ -1,0 +1,25 @@
+{{template "layout.html" .}}
+{{define "content"}}
+<div class="page-header">
+  <h1>Lock Sats</h1>
+  <p>Earn {{.RateBPS}} BPS APY over {{.LockDays}} days</p>
+</div>
+
+{{if .Error}}<div class="alert alert-error">{{.Error}}</div>{{end}}
+
+<div class="card" style="max-width:480px;">
+  <form method="POST" action="/savings/lock">
+    <div class="form-group">
+      <label>Amount to lock (sats)</label>
+      <input type="number" name="amount_sats" class="form-control mono" placeholder="100000" min="{{.MinSats}}" max="{{.MaxSats}}" required>
+      <div class="form-hint">Min: {{.MinSats}} sats · Max: {{.MaxSats}} sats</div>
+    </div>
+    <div class="card" style="background:var(--surface-2);margin-bottom:1.2rem;">
+      <div style="font-size:0.85rem;color:var(--text-muted);">
+        <strong>Lock terms:</strong> {{.LockDays}} days · {{.RateBPS}} BPS annual rate · 20% early-exit penalty
+      </div>
+    </div>
+    <button type="submit" class="btn btn-primary btn-block">Lock Sats</button>
+  </form>
+</div>
+{{end}}

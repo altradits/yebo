@@ -1,0 +1,67 @@
+{{template "layout.html" .}}
+{{define "content"}}
+<div class="page-header">
+  <h1>Good day, {{.FullName}}</h1>
+  <p>{{.Phone}}</p>
+</div>
+
+<!-- Balance card -->
+<div class="balance-card" style="margin-bottom:1.5rem;">
+  <div class="balance-label">Available Balance</div>
+  <div class="balance-sats" data-sats="{{.BalanceSats}}">{{.BalanceSats}} sats</div>
+  <div class="balance-kes">≈ KES {{printf "%.2f" .BalanceKES}}</div>
+  <button class="balance-toggle">show KES →</button>
+</div>
+
+<!-- Quick actions -->
+<div class="action-grid">
+  <a href="/deposit" class="action-btn">
+    <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="12" y1="5" x2="12" y2="19"/><polyline points="19 12 12 19 5 12"/></svg>
+    Deposit
+  </a>
+  <a href="/withdraw" class="action-btn">
+    <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="12" y1="19" x2="12" y2="5"/><polyline points="5 12 12 5 19 12"/></svg>
+    Withdraw
+  </a>
+  <a href="/savings/lock" class="action-btn">
+    <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="11" width="18" height="11" rx="2"/><path d="M7 11V7a5 5 0 0 1 10 0v4"/></svg>
+    Save
+  </a>
+  <a href="/chama/create" class="action-btn">
+    <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M23 21v-2a4 4 0 0 0-3-3.87"/></svg>
+    Chama
+  </a>
+</div>
+
+<!-- Recent transactions -->
+<div class="card">
+  <div class="card-header">Recent Transactions</div>
+  {{if .Entries}}
+  <div class="tx-list">
+    {{range .Entries}}
+    <div class="tx-item">
+      <div class="tx-icon {{if .IsCredit}}credit{{else}}debit{{end}}">
+        {{if .IsCredit}}
+        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><line x1="12" y1="5" x2="12" y2="19"/><polyline points="19 12 12 19 5 12"/></svg>
+        {{else}}
+        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><line x1="12" y1="19" x2="12" y2="5"/><polyline points="5 12 12 5 19 12"/></svg>
+        {{end}}
+      </div>
+      <div class="tx-label">
+        <div class="type">{{.Type}}</div>
+        <div class="time">{{.CreatedAt}}</div>
+      </div>
+      <div class="tx-amount {{if .IsCredit}}credit{{else}}debit{{end}}">
+        {{if .IsCredit}}+{{else}}-{{end}}{{.AmountSats}} sats
+      </div>
+    </div>
+    {{end}}
+  </div>
+  {{else}}
+  <p style="color:var(--text-dim);font-size:0.9rem;padding:1rem 0;">No transactions yet. Deposit to get started.</p>
+  {{end}}
+  <div style="margin-top:1rem;">
+    <a href="/history" class="btn btn-outline btn-sm">View all transactions</a>
+  </div>
+</div>
+{{end}}

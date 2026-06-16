@@ -1,0 +1,52 @@
+{{template "layout.html" .}}
+{{define "content"}}
+<div class="page-header">
+  <h1>Withdraw</h1>
+  <p>Send funds from your YeboBank account</p>
+</div>
+
+{{if .Error}}<div class="alert alert-error">{{.Error}}</div>{{end}}
+{{if .Success}}<div class="alert alert-success">{{.Success}}</div>{{end}}
+
+<div class="stat-tile" style="margin-bottom:1.5rem;max-width:300px;">
+  <div class="label">Available</div>
+  <div class="value">{{.BalanceSats}}</div>
+  <div class="sub">≈ KES {{printf "%.2f" .BalanceKES}}</div>
+</div>
+
+<div style="display:grid;gap:1.5rem;grid-template-columns:repeat(auto-fit,minmax(300px,1fr));">
+
+  <div class="card">
+    <h3 style="margin-bottom:1rem;">Withdraw to M-Pesa</h3>
+    <form method="POST" action="/withdraw/mpesa">
+      <div class="form-group">
+        <label>Phone number</label>
+        <input type="tel" name="phone" class="form-control" placeholder="+254 700 000 000" required>
+      </div>
+      <div class="form-group">
+        <label>Amount (KES)</label>
+        <input type="number" name="amount_kes" class="form-control" placeholder="500" min="10" required>
+      </div>
+      <button type="submit" class="btn btn-primary btn-block">Withdraw via M-Pesa</button>
+    </form>
+  </div>
+
+  <div class="card">
+    <h3 style="margin-bottom:1rem;">Pay Lightning Invoice</h3>
+    <form method="POST" action="/withdraw/lightning">
+      <div class="form-group">
+        <label>Payment request (BOLT11)</label>
+        <textarea name="payment_request" id="payment_request" class="form-control mono" rows="4" placeholder="lnbc..." required></textarea>
+      </div>
+      <div style="display:flex;gap:0.75rem;flex-wrap:wrap;">
+        <button type="submit" class="btn btn-primary">Pay Invoice</button>
+        <button type="button" id="scan-btn" class="btn btn-outline">Scan QR</button>
+      </div>
+      <video id="scan-video" style="display:none;width:100%;margin-top:1rem;border-radius:var(--radius-sm);" autoplay playsinline></video>
+      <div id="scan-result" style="font-size:0.8rem;color:var(--text-muted);margin-top:0.5rem;"></div>
+    </form>
+  </div>
+
+</div>
+<script src="/static/js/scanner.js"></script>
+{{end}}

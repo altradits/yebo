@@ -1,0 +1,30 @@
+{{template "layout.html" .}}
+{{define "content"}}
+<div class="page-header"><h1>Customers</h1></div>
+<div class="card">
+  <div class="table-wrap">
+    <table>
+      <thead><tr><th>Phone</th><th>Name</th><th>Role</th><th>KYC</th><th>Balance (sats)</th><th>Status</th><th>Action</th></tr></thead>
+      <tbody>
+      {{range .Users}}
+      <tr>
+        <td>{{.Phone}}</td>
+        <td>{{.FullName}}</td>
+        <td><span class="badge badge-forest">{{.Role}}</span></td>
+        <td>{{.KYC}}</td>
+        <td class="td-mono">{{.BalanceSats}}</td>
+        <td><span class="badge {{if .IsActive}}badge-green{{else}}badge-red{{end}}">{{if .IsActive}}active{{else}}suspended{{end}}</span></td>
+        <td>
+          <form method="POST" action="/admin/customers/toggle" style="display:inline;">
+            <input type="hidden" name="user_id" value="{{.ID}}">
+            <input type="hidden" name="action" value="{{if .IsActive}}suspend{{else}}activate{{end}}">
+            <button type="submit" class="btn btn-sm btn-outline">{{if .IsActive}}Suspend{{else}}Activate{{end}}</button>
+          </form>
+        </td>
+      </tr>
+      {{end}}
+      </tbody>
+    </table>
+  </div>
+</div>
+{{end}}

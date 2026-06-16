@@ -1,0 +1,25 @@
+{{template "layout.html" .}}
+{{define "content"}}
+<div class="page-header">
+  <h1>Lightning Invoice</h1>
+  <p>Scan or share this invoice to receive payment</p>
+</div>
+
+<div class="card" style="max-width:400px;">
+  <div style="text-align:center;margin-bottom:1.5rem;">
+    <div id="qr" data-value="{{.Invoice}}" style="display:inline-block;padding:1rem;background:#fff;border-radius:var(--radius);border:1.5px solid var(--border);"></div>
+  </div>
+  <div class="form-group">
+    <label>Amount</label>
+    <div class="mono" style="font-size:1.2rem;font-weight:700;color:var(--gold);">{{.AmountSats}} sats</div>
+  </div>
+  <div class="form-group">
+    <label>Invoice</label>
+    <textarea class="form-control mono" rows="4" readonly onclick="this.select()">{{.Invoice}}</textarea>
+  </div>
+  <div class="form-hint">Payment hash: <span class="mono hash">{{.PaymentHash}}</span></div>
+</div>
+
+<script src="https://cdnjs.cloudflare.com/ajax/libs/qrcodejs/1.0.0/qrcode.min.js"></script>
+<script src="/static/js/qr.js"></script>
+{{end}}

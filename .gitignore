@@ -1,0 +1,8 @@
+.env
+*.macaroon
+tls.cert
+tls.key
+/yebobank
+/tmp/
+*.test
+*.out

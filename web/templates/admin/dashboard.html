@@ -1,0 +1,33 @@
+{{template "layout.html" .}}
+{{define "content"}}
+<div class="page-header">
+  <h1>Admin Dashboard</h1>
+  <p>System overview</p>
+</div>
+
+<div class="stat-grid">
+  <div class="stat-tile">
+    <div class="label">Customers</div>
+    <div class="value">{{.UserCount}}</div>
+  </div>
+  <div class="stat-tile">
+    <div class="label">Active Agents</div>
+    <div class="value">{{.AgentCount}}</div>
+  </div>
+  <div class="stat-tile">
+    <div class="label">Savings Locks</div>
+    <div class="value">{{.ActiveLocks}}</div>
+  </div>
+  <div class="stat-tile">
+    <div class="label">Total Sats Held</div>
+    <div class="value" style="font-size:1.2rem;">{{.TotalBalanceSats}}</div>
+    <div class="sub">All wallets combined</div>
+  </div>
+</div>
+
+<div style="display:flex;gap:0.75rem;flex-wrap:wrap;">
+  <a href="/admin/customers" class="btn btn-outline">Customers</a>
+  <a href="/admin/agents" class="btn btn-outline">Agents</a>
+  <a href="/admin/settings" class="btn btn-outline">Pool Settings</a>
+</div>
+{{end}}

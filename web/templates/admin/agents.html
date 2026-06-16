@@ -1,0 +1,30 @@
+{{template "layout.html" .}}
+{{define "content"}}
+<div class="page-header"><h1>Agents</h1></div>
+<div class="card">
+  <div class="table-wrap">
+    <table>
+      <thead><tr><th>Phone</th><th>Business</th><th>Location</th><th>Status</th><th>Float (sats)</th><th>Action</th></tr></thead>
+      <tbody>
+      {{range .Agents}}
+      <tr>
+        <td>{{.Phone}}</td>
+        <td>{{.BizName}}</td>
+        <td>{{.Location}}</td>
+        <td><span class="badge {{if eq .Status "active"}}badge-green{{else if eq .Status "pending"}}badge-amber{{else}}badge-red{{end}}">{{.Status}}</span></td>
+        <td class="td-mono">{{.FloatSats}}</td>
+        <td>
+          {{if eq .Status "pending"}}
+          <form method="POST" action="/admin/agents/approve" style="display:inline;">
+            <input type="hidden" name="agent_id" value="{{.ID}}">
+            <button type="submit" class="btn btn-sm btn-primary">Approve</button>
+          </form>
+          {{end}}
+        </td>
+      </tr>
+      {{end}}
+      </tbody>
+    </table>
+  </div>
+</div>
+{{end}}
