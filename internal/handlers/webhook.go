@@ -1,14 +1,16 @@
 package handlers
 
 import (
+	"encoding/json"
 	"fmt"
+	"io"
 	"log"
 	"net/http"
 
-	"github.com/yebobank/yebobank/internal/db"
-	"github.com/yebobank/yebobank/internal/services/mpesa"
-	"github.com/yebobank/yebobank/internal/services/rates"
-	"github.com/yebobank/yebobank/internal/utils"
+	"github.com/altradits/yebo/internal/db"
+	"github.com/altradits/yebo/internal/services/mpesa"
+	"github.com/altradits/yebo/internal/services/rates"
+	"github.com/altradits/yebo/internal/utils"
 )
 
 // MpesaSTKCallback handles the M-Pesa STK Push confirmation callback from Safaricom.
@@ -92,10 +94,80 @@ func MpesaSTKCallback(w http.ResponseWriter, r *http.Request) {
 	fmt.Fprint(w, `{"ResultCode":0,"ResultDesc":"Accepted"}`)
 }
 
-// LNDInvoiceSettled handles the LND webhook when an invoice is settled.
+// LNDInvoiceSettled handles the LND webhook when a Lightning invoice is settled.
+// LND calls this with JSON body: {"payment_hash": "<hex>"}
 func LNDInvoiceSettled(w http.ResponseWriter, r *http.Request) {
-	// LND streams invoice updates via REST SSE or webhook depending on configuration.
-	// This endpoint is called by our own polling loop or LND webhook integration.
-	// Full implementation: handlers/webhook.go — LND invoice settlement
+	var body struct {
+		PaymentHash string `json:"payment_hash"`
+	}
+	if err := json.NewDecoder(io.LimitReader(r.Body, 1<<16)).Decode(&body); err != nil || body.PaymentHash == "" {
+		w.WriteHeader(http.StatusBadRequest)
+		return
+	}
+
+	var walletID, amountSats int64
+	var settled bool
+	err := db.DB.QueryRow(`
+		SELECT wallet_id, amount_sats, settled FROM ln_invoices WHERE payment_hash=$1
+	`, body.PaymentHash).Scan(&walletID, &amountSats, &settled)
+	if err != nil {
+		log.Printf("webhook: lnd: invoice not found: %s", body.PaymentHash)
+		w.WriteHeader(http.StatusOK)
+		return
+	}
+	if settled {
+		w.WriteHeader(http.StatusOK)
+		return
+	}
+
+	tx, err := db.DB.Begin()
+	if err != nil {
+		log.Printf("webhook: lnd: begin tx: %v", err)
+		w.WriteHeader(http.StatusInternalServerError)
+		return
+	}
+	defer tx.Rollback() //nolint:errcheck
+
+	if _, err := tx.Exec(`UPDATE ln_invoices SET settled=true, settled_at=NOW() WHERE payment_hash=$1`, body.PaymentHash); err != nil {
+		log.Printf("webhook: lnd: mark settled: %v", err)
+		w.WriteHeader(http.StatusInternalServerError)
+		return
+	}
+	if err := db.CreditSats(tx, walletID, amountSats, "deposit", body.PaymentHash,
+		"Lightning deposit", nil); err != nil {
+		log.Printf("webhook: lnd: credit sats: %v", err)
+		w.WriteHeader(http.StatusInternalServerError)
+		return
+	}
+	if err := tx.Commit(); err != nil {
+		log.Printf("webhook: lnd: commit: %v", err)
+		w.WriteHeader(http.StatusInternalServerError)
+		return
+	}
+
+	log.Printf("webhook: lnd: credited %d sats to wallet %d (hash %s)", amountSats, walletID, body.PaymentHash)
 	w.WriteHeader(http.StatusOK)
+}
+
+// MpesaB2CCallback handles B2C payment result callbacks from Safaricom.
+func MpesaB2CCallback(w http.ResponseWriter, r *http.Request) {
+	res, err := mpesa.ParseB2CResult(r)
+	if err != nil {
+		log.Printf("webhook: b2c callback: %v", err)
+		w.WriteHeader(http.StatusBadRequest)
+		return
+	}
+	if res.Result.ResultCode != 0 {
+		log.Printf("webhook: b2c failed: code=%d %s txn=%s",
+			res.Result.ResultCode, res.Result.ResultDesc, res.Result.TransactionID)
+	} else {
+		log.Printf("webhook: b2c success: txn=%s", res.Result.TransactionID)
+	}
+	fmt.Fprint(w, `{"ResultCode":0,"ResultDesc":"Accepted"}`)
+}
+
+// MpesaB2CTimeout handles B2C queue timeout callbacks from Safaricom.
+func MpesaB2CTimeout(w http.ResponseWriter, r *http.Request) {
+	log.Printf("webhook: b2c timeout received")
+	fmt.Fprint(w, `{"ResultCode":0,"ResultDesc":"Accepted"}`)
 }

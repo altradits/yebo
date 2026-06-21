@@ -2,9 +2,10 @@ package handlers
 
 import (
 	"net/http"
+	"strconv"
 
-	"github.com/yebobank/yebobank/internal/db"
-	"github.com/yebobank/yebobank/internal/middleware"
+	"github.com/altradits/yebo/internal/db"
+	"github.com/altradits/yebo/internal/middleware"
 )
 
 func AdminDashboard(w http.ResponseWriter, r *http.Request) {
@@ -104,6 +105,11 @@ func AdminSettings(w http.ResponseWriter, r *http.Request) {
 		})
 		return
 	}
-	// TODO: update pool settings
-	http.Redirect(w, r, "/admin/settings", http.StatusSeeOther)
+	rateBPS, _ := strconv.Atoi(r.FormValue("rate_bps"))
+	lockDays, _ := strconv.Atoi(r.FormValue("lock_days"))
+	minSats, _ := strconv.ParseInt(r.FormValue("min_sats"), 10, 64)
+	maxSats, _ := strconv.ParseInt(r.FormValue("max_sats"), 10, 64)
+	db.DB.Exec(`UPDATE pool_settings SET interest_rate_bps=$1, lock_days=$2, min_savings_sats=$3, max_savings_sats=$4 WHERE id=1`, //nolint:errcheck
+		rateBPS, lockDays, minSats, maxSats)
+	http.Redirect(w, r, "/admin/settings?saved=1", http.StatusSeeOther)
 }

@@ -3,15 +3,15 @@ package handlers
 import (
 	"fmt"
 	"net/http"
-	"os"
 	"strconv"
 	"time"
 
-	"github.com/yebobank/yebobank/internal/db"
-	"github.com/yebobank/yebobank/internal/middleware"
-	"github.com/yebobank/yebobank/internal/services/lightning"
-	"github.com/yebobank/yebobank/internal/services/rates"
-	"github.com/yebobank/yebobank/internal/utils"
+	"github.com/altradits/yebo/internal/db"
+	"github.com/altradits/yebo/internal/middleware"
+	"github.com/altradits/yebo/internal/services/lightning"
+	"github.com/altradits/yebo/internal/services/mpesa"
+	"github.com/altradits/yebo/internal/services/rates"
+	"github.com/altradits/yebo/internal/utils"
 )
 
 func Deposit(w http.ResponseWriter, r *http.Request) {
@@ -46,8 +46,15 @@ func DepositMpesa(w http.ResponseWriter, r *http.Request) {
 		VALUES ('PENDING-'||gen_random_uuid(), 'stk_push', $1, $2, 'pending', $3, '') RETURNING id
 	`, phone, amountKES, walletID).Scan(&mpesaID)
 
-	// TODO: initiate Daraja STK Push here
-	_ = os.Getenv("MPESA_SHORTCODE")
+	stkResp, err := mpesa.STKPush(phone, int64(amountKES), fmt.Sprintf("deposit_%d", mpesaID))
+	if err != nil {
+		renderTemplate(w, r, "customer/deposit.html", map[string]interface{}{
+			"Error": "Could not initiate M-Pesa payment. Please try again.",
+		})
+		return
+	}
+	db.DB.Exec(`UPDATE mpesa_transactions SET checkout_request_id=$1 WHERE id=$2`, //nolint:errcheck
+		stkResp.CheckoutRequestID, mpesaID)
 
 	renderTemplate(w, r, "customer/deposit.html", map[string]interface{}{
 		"Success": fmt.Sprintf("STK Push sent to %s. Enter your M-Pesa PIN to complete.", phone),

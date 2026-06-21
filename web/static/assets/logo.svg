@@ -1,0 +1,6 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 120 40" fill="none">
+  <circle cx="20" cy="20" r="16" fill="#f7931a"/>
+  <text x="20" y="26" font-family="monospace" font-size="16" font-weight="700" text-anchor="middle" fill="white">₿</text>
+  <text x="44" y="26" font-family="system-ui,sans-serif" font-size="16" font-weight="700" fill="#f7931a">Yebo</text>
+  <text x="87" y="26" font-family="system-ui,sans-serif" font-size="16" font-weight="400" fill="#e5e7eb">Bank</text>
+</svg>

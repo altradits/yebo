@@ -104,7 +104,7 @@ func (c *conn) upgradeSSL() error {
 	if resp[0] != 'S' {
 		return fmt.Errorf("pgdrv: server declined SSL")
 	}
-	c.nc = tls.Client(c.nc, &tls.Config{InsecureSkipVerify: true}) // #nosec G402
+	c.nc = tls.Client(c.nc, &tls.Config{ServerName: c.cfg.host})
 	return nil
 }
 

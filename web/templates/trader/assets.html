@@ -1,4 +1,33 @@
 {{template "layout.html" .}}
 {{define "content"}}
-<!-- TODO: trader/assets -->
+<div class="page-header">
+  <h1>Treasury Assets</h1>
+</div>
+
+<div class="card">
+  {{if .Assets}}
+  <table style="width:100%;border-collapse:collapse;">
+    <thead>
+      <tr style="border-bottom:1px solid var(--border);">
+        <th style="text-align:left;padding:0.75rem;color:var(--text-dim);font-weight:500;">Asset</th>
+        <th style="text-align:left;padding:0.75rem;color:var(--text-dim);font-weight:500;">Type</th>
+        <th style="text-align:right;padding:0.75rem;color:var(--text-dim);font-weight:500;">Balance (sats)</th>
+        <th style="text-align:right;padding:0.75rem;color:var(--text-dim);font-weight:500;">APY (bps)</th>
+      </tr>
+    </thead>
+    <tbody>
+      {{range .Assets}}
+      <tr style="border-bottom:1px solid var(--border);">
+        <td style="padding:0.75rem;">{{.Name}}</td>
+        <td style="padding:0.75rem;color:var(--text-dim);">{{.Type}}</td>
+        <td style="padding:0.75rem;text-align:right;">{{.BalanceSats}}</td>
+        <td style="padding:0.75rem;text-align:right;color:var(--orange);">{{.APYBPS}}</td>
+      </tr>
+      {{end}}
+    </tbody>
+  </table>
+  {{else}}
+  <p style="color:var(--text-dim);font-size:0.9rem;padding:1rem 0;">No treasury assets configured.</p>
+  {{end}}
+</div>
 {{end}}

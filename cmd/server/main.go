@@ -1,18 +1,22 @@
 package main
 
 import (
+	"context"
 	"log"
 	"net/http"
 	"os"
+	"os/signal"
 	"path/filepath"
+	"syscall"
+	"time"
 
-	"github.com/yebobank/yebobank/internal/db"
-	"github.com/yebobank/yebobank/internal/handlers"
-	"github.com/yebobank/yebobank/internal/middleware"
-	"github.com/yebobank/yebobank/internal/services/interest"
-	"github.com/yebobank/yebobank/internal/services/lightning"
-	"github.com/yebobank/yebobank/internal/services/mpesa"
-	"github.com/yebobank/yebobank/internal/services/rates"
+	"github.com/altradits/yebo/internal/db"
+	"github.com/altradits/yebo/internal/handlers"
+	"github.com/altradits/yebo/internal/middleware"
+	"github.com/altradits/yebo/internal/services/interest"
+	"github.com/altradits/yebo/internal/services/lightning"
+	"github.com/altradits/yebo/internal/services/mpesa"
+	"github.com/altradits/yebo/internal/services/rates"
 )
 
 func main() {
@@ -21,7 +25,7 @@ func main() {
 		log.Fatalf("db: %v", err)
 	}
 
-	migrationsDir := envOr("MIGRATIONS_DIR", "docs/database/migrations")
+	migrationsDir := envOr("MIGRATIONS_DIR", "internal/db/migrations")
 	if err := db.Migrate(migrationsDir); err != nil {
 		log.Fatalf("migrations: %v", err)
 	}
@@ -65,6 +69,8 @@ func main() {
 
 	// Webhooks (public — called by Safaricom and LND)
 	mux.HandleFunc("/webhook/mpesa", handlers.MpesaSTKCallback)
+	mux.HandleFunc("/webhook/mpesa/b2c", handlers.MpesaB2CCallback)
+	mux.HandleFunc("/webhook/mpesa/b2c/timeout", handlers.MpesaB2CTimeout)
 	mux.HandleFunc("/webhook/lnd", handlers.LNDInvoiceSettled)
 
 	// Customer (authenticated)
@@ -113,12 +119,34 @@ func main() {
 	mux.Handle("/admin/agents/approve", adminAuth(http.HandlerFunc(handlers.AdminApproveAgent)))
 	mux.Handle("/admin/settings", adminAuth(http.HandlerFunc(handlers.AdminSettings)))
 
-	// ── Listen ──────────────────────────────────────────────────────────────────
+	// ── Listen (graceful shutdown) ───────────────────────────────────────────────
 	port := envOr("PORT", "8080")
-	log.Printf("yebobank: listening on :%s", port)
-	if err := http.ListenAndServe(":"+port, mux); err != nil {
-		log.Fatalf("server: %v", err)
+	srv := &http.Server{
+		Addr:         ":" + port,
+		Handler:      mux,
+		ReadTimeout:  15 * time.Second,
+		WriteTimeout: 30 * time.Second,
+		IdleTimeout:  60 * time.Second,
 	}
+
+	quit := make(chan os.Signal, 1)
+	signal.Notify(quit, syscall.SIGINT, syscall.SIGTERM)
+
+	go func() {
+		log.Printf("yebobank: listening on :%s", port)
+		if err := srv.ListenAndServe(); err != nil && err != http.ErrServerClosed {
+			log.Fatalf("server: %v", err)
+		}
+	}()
+
+	<-quit
+	log.Println("yebobank: shutting down...")
+	ctx, cancel := context.WithTimeout(context.Background(), 10*time.Second)
+	defer cancel()
+	if err := srv.Shutdown(ctx); err != nil {
+		log.Fatalf("server: forced shutdown: %v", err)
+	}
+	log.Println("yebobank: stopped")
 }
 
 func envOr(key, fallback string) string {

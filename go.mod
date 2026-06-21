@@ -1,3 +1,3 @@
-module github.com/yebobank/yebobank
+module github.com/altradits/yebo
 
 go 1.22

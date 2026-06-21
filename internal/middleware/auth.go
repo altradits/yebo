@@ -7,7 +7,7 @@ import (
 	"strconv"
 	"time"
 
-	"github.com/yebobank/yebobank/internal/db"
+	"github.com/altradits/yebo/internal/db"
 )
 
 type ctxKey string
@@ -20,25 +20,8 @@ const (
 
 // RequireAuth validates the session cookie and injects user context.
 // Redirects to /login on failure.
-// Set AUTH_BYPASS=true in .env to skip auth during testing — remove when done.
 func RequireAuth(next http.Handler) http.Handler {
 	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-		if os.Getenv("AUTH_BYPASS") == "true" {
-			var userID, walletID int64
-			var role string
-			err := db.DB.QueryRow(`
-				SELECT u.id, u.role, w.id
-				FROM users u JOIN wallets w ON w.user_id = u.id
-				WHERE u.role = 'admin' LIMIT 1
-			`).Scan(&userID, &role, &walletID)
-			if err == nil {
-				ctx := context.WithValue(r.Context(), CtxUserID, userID)
-				ctx = context.WithValue(ctx, CtxUserRole, role)
-				ctx = context.WithValue(ctx, CtxWalletID, walletID)
-				next.ServeHTTP(w, r.WithContext(ctx))
-				return
-			}
-		}
 		cookie, err := r.Cookie("session")
 		if err != nil || cookie.Value == "" {
 			http.Redirect(w, r, "/login", http.StatusSeeOther)
