@@ -38,15 +38,108 @@ Everything denominated in Bitcoin (satoshis), displayed in Kenyan Shillings.
 - LNbits: https://lnbits.com
 - Yellow Card: https://yellowcard.io
 
-## Quick Start
+## How to Run
+
+### Prerequisites
+
+- Go 1.22+
+- PostgreSQL 16+ **or** Docker + Docker Compose
+
+---
+
+### Option 1 — Docker Compose (recommended)
 
 ```bash
-git clone https://github.com/yebobank/yebobank
-cd yebobank
+git clone https://github.com/altradits/yebo
+cd yebo
 cp .env.example .env
-# Edit .env with M-Pesa, LND, and database credentials
-./scripts/setup_db.sh
+# Edit .env — minimum required fields are marked below
+docker compose up --build
+```
+
+The server starts at **http://localhost:8080** (nginx proxies port 80/443).  
+PostgreSQL data is persisted in the `pgdata` Docker volume.
+
+---
+
+### Option 2 — Local (Go + Postgres)
+
+**1. Database**
+
+```bash
+createuser -P yebobank        # pick a password
+createdb -O yebobank yebobank
+```
+
+**2. Environment**
+
+```bash
+cp .env.example .env
+```
+
+Edit `.env` — required fields to start:
+
+```env
+# Database
+DB_URL=postgres://yebobank:<password>@localhost:5432/yebobank?sslmode=disable
+
+# Server
+PORT=8080
+
+# M-Pesa (use Safaricom Sandbox for development)
+MPESA_ENV=sandbox
+MPESA_CONSUMER_KEY=<from sandbox.safaricom.co.ke>
+MPESA_CONSUMER_SECRET=<from sandbox.safaricom.co.ke>
+MPESA_SHORTCODE=174379
+MPESA_PASSKEY=<sandbox passkey>
+MPESA_CALLBACK_URL=https://<your-ngrok-or-domain>
+
+# Lightning (optional — server starts without LND)
+LND_HOST=localhost:10009
+LND_MACAROON_HEX=<admin.macaroon hex>
+LND_TLS_CERT_PATH=/path/to/tls.cert
+```
+
+**3. Run**
+
+```bash
 go run cmd/server/main.go
+```
+
+Migrations and seed data run automatically on startup. The default admin account is created by the seed:
+
+```
+Phone: +254700000000
+Password: admin1234
+```
+
+Change the password immediately after first login at `/settings/password`.
+
+---
+
+### Exposing Webhooks (M-Pesa callbacks)
+
+Safaricom needs a public HTTPS URL to deliver STK Push and B2C callbacks.  
+Use [ngrok](https://ngrok.com) or [Cloudflare Tunnel](https://developers.cloudflare.com/cloudflare-one/connections/connect-networks/) during development:
+
+```bash
+ngrok http 8080
+# Copy the https URL → set MPESA_CALLBACK_URL in .env
+```
+
+---
+
+### TLS in Production
+
+The included `nginx.conf` expects Let's Encrypt certificates at:
+```
+/etc/letsencrypt/live/yebobank.com/
+```
+
+Obtain them with [certbot](https://certbot.eff.org/) before starting nginx, then:
+
+```bash
+docker compose up -d
 ```
 
 ## THE RULE EVERY DEVELOPER MUST KNOW
