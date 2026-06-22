@@ -21,10 +21,10 @@ type B2CRequest struct {
 }
 
 type B2CResponse struct {
-	ConversationID         string `json:"ConversationID"`
+	ConversationID           string `json:"ConversationID"`
 	OriginatorConversationID string `json:"OriginatorConversationID"`
-	ResponseCode           string `json:"ResponseCode"`
-	ResponseDescription    string `json:"ResponseDescription"`
+	ResponseCode             string `json:"ResponseCode"`
+	ResponseDescription      string `json:"ResponseDescription"`
 }
 
 // SendB2C initiates a B2C payout to the given phone in KES.

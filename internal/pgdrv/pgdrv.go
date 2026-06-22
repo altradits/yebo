@@ -254,8 +254,18 @@ func pbkdf2(pw, salt []byte, iter, kl int) []byte {
 	return dk[:kl]
 }
 
-func hmacSHA256(key, data []byte) []byte { h := hmac.New(sha256.New, key); h.Write(data); return h.Sum(nil) }
-func xor(a, b []byte) []byte             { o := make([]byte, len(a)); for i := range a { o[i] = a[i] ^ b[i] }; return o }
+func hmacSHA256(key, data []byte) []byte {
+	h := hmac.New(sha256.New, key)
+	h.Write(data)
+	return h.Sum(nil)
+}
+func xor(a, b []byte) []byte {
+	o := make([]byte, len(a))
+	for i := range a {
+		o[i] = a[i] ^ b[i]
+	}
+	return o
+}
 func parseKV(s string) map[string]string {
 	m := make(map[string]string)
 	for _, p := range strings.Split(s, ",") {
@@ -317,8 +327,8 @@ type stmt struct {
 	q string
 }
 
-func (s *stmt) Close() error    { return nil }
-func (s *stmt) NumInput() int   { return -1 }
+func (s *stmt) Close() error  { return nil }
+func (s *stmt) NumInput() int { return -1 }
 func (s *stmt) Exec(args []driver.Value) (driver.Result, error) {
 	r, err := s.c.runQuery(s.q, args)
 	if err != nil {

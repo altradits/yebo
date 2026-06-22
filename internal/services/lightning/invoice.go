@@ -59,7 +59,7 @@ func InvoiceStatus(paymentHash string) (settled bool, err error) {
 	}
 	defer resp.Body.Close()
 	var result struct {
-		Settled   bool   `json:"settled"`
+		Settled    bool   `json:"settled"`
 		SettleDate string `json:"settle_date"`
 	}
 	if err := json.NewDecoder(resp.Body).Decode(&result); err != nil {

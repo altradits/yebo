@@ -2,12 +2,13 @@ package middleware
 
 import (
 	"context"
+	"encoding/json"
 	"net/http"
 	"os"
 	"strconv"
 	"time"
 
-	"github.com/altradits/yebo/internal/db"
+	"github.com/yebobank/yebobank/internal/db"
 )
 
 type ctxKey string
@@ -31,6 +32,32 @@ func RequireAuth(next http.Handler) http.Handler {
 		if !ok {
 			clearSession(w)
 			http.Redirect(w, r, "/login", http.StatusSeeOther)
+			return
+		}
+		ctx := context.WithValue(r.Context(), CtxUserID, userID)
+		ctx = context.WithValue(ctx, CtxUserRole, role)
+		ctx = context.WithValue(ctx, CtxWalletID, walletID)
+		next.ServeHTTP(w, r.WithContext(ctx))
+	})
+}
+
+// RequireAPIAuth is like RequireAuth but returns JSON 401 instead of redirecting.
+// Use this for /api/* routes consumed by the Next.js frontend.
+func RequireAPIAuth(next http.Handler) http.Handler {
+	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		cookie, err := r.Cookie("session")
+		if err != nil || cookie.Value == "" {
+			w.Header().Set("Content-Type", "application/json")
+			w.WriteHeader(http.StatusUnauthorized)
+			json.NewEncoder(w).Encode(map[string]string{"error": "unauthorized"}) //nolint:errcheck
+			return
+		}
+		userID, role, walletID, ok := validateSession(cookie.Value)
+		if !ok {
+			clearSession(w)
+			w.Header().Set("Content-Type", "application/json")
+			w.WriteHeader(http.StatusUnauthorized)
+			json.NewEncoder(w).Encode(map[string]string{"error": "session expired"}) //nolint:errcheck
 			return
 		}
 		ctx := context.WithValue(r.Context(), CtxUserID, userID)

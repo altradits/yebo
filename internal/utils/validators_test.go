@@ -4,8 +4,8 @@ import "testing"
 
 func TestValidatePhone(t *testing.T) {
 	cases := []struct {
-		in  string
-		ok  bool
+		in string
+		ok bool
 	}{
 		{"+254712345678", true},
 		{"+1234567890", true},

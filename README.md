@@ -43,84 +43,130 @@ Everything denominated in Bitcoin (satoshis), displayed in Kenyan Shillings.
 ### Prerequisites
 
 - Go 1.22+
-- PostgreSQL 16+ **or** Docker + Docker Compose
+- Docker + Docker Compose (for PostgreSQL)
 
 ---
 
-### Option 1 — Docker Compose (recommended)
+### Quickstart — Docker Postgres + `go run`
+
+This is the recommended way to develop. Docker provides the database; you run the Go server directly so you get fast reloads.
+
+**1. Start the database**
 
 ```bash
 git clone https://github.com/altradits/yebo
 cd yebo
 cp .env.example .env
-# Edit .env — minimum required fields are marked below
-docker compose up --build
+docker compose up -d postgres
 ```
 
-The server starts at **http://localhost:8080** (nginx proxies port 80/443).  
-PostgreSQL data is persisted in the `pgdata` Docker volume.
+PostgreSQL is now available at `localhost:5433`.
 
----
+**2. Configure `.env`**
 
-### Option 2 — Local (Go + Postgres)
-
-**1. Database**
-
-```bash
-createuser -P yebobank        # pick a password
-createdb -O yebobank yebobank
-```
-
-**2. Environment**
-
-```bash
-cp .env.example .env
-```
-
-Edit `.env` — required fields to start:
+Minimum required fields (the rest can stay as defaults for local dev):
 
 ```env
-# Database
-DB_URL=postgres://yebobank:<password>@localhost:5432/yebobank?sslmode=disable
-
-# Server
+DB_URL=postgres://yebobank:change_me@localhost:5433/yebobank?sslmode=disable
 PORT=8080
-
-# M-Pesa (use Safaricom Sandbox for development)
-MPESA_ENV=sandbox
-MPESA_CONSUMER_KEY=<from sandbox.safaricom.co.ke>
-MPESA_CONSUMER_SECRET=<from sandbox.safaricom.co.ke>
-MPESA_SHORTCODE=174379
-MPESA_PASSKEY=<sandbox passkey>
-MPESA_CALLBACK_URL=https://<your-ngrok-or-domain>
-
-# Lightning (optional — server starts without LND)
-LND_HOST=localhost:10009
-LND_MACAROON_HEX=<admin.macaroon hex>
-LND_TLS_CERT_PATH=/path/to/tls.cert
+ADMIN_PHONE=+254700000000
+ADMIN_PASSWORD=change_this_admin_password
 ```
 
 **3. Run**
 
 ```bash
+bash scripts/run_dev.sh
+```
+
+Or directly:
+
+```bash
+set -a && source .env && set +a
 go run cmd/server/main.go
 ```
 
-Migrations and seed data run automatically on startup. The default admin account is created by the seed:
+The server starts at **http://localhost:8080**.  
+Migrations and seed data run automatically on first start.  
+LND (Lightning) is optional — the server logs a warning and continues without it.
 
+**Admin login:**
 ```
-Phone: +254700000000
-Password: admin1234
+URL:      http://localhost:8080/login
+Phone:    value of ADMIN_PHONE in .env
+Password: value of ADMIN_PASSWORD in .env
 ```
 
-Change the password immediately after first login at `/settings/password`.
+---
+
+### Option B — Full Docker Compose (no local Go needed)
+
+```bash
+cp .env.example .env
+# Edit .env with your values
+docker compose up --build
+```
+
+Server: **http://localhost:8080**  
+PostgreSQL data persisted in the `pgdata` Docker volume.  
+Nginx (TLS reverse proxy) is production-only: `docker compose --profile production up`
+
+---
+
+### Frontend (Next.js customer app)
+
+A Next.js 16 frontend lives in `frontend/`. It talks to the Go backend via JSON API at `/api/*`.
+
+**Prerequisites:** Node 20+
+
+```bash
+cd frontend
+cp .env.local.example .env.local   # sets NEXT_PUBLIC_API_URL=http://localhost:8080
+npm install
+npm run dev
+```
+
+Frontend starts at **http://localhost:3000**.
+
+The app has 5 tabs: Home · Send · Activity · Community · Profile, plus Deposit, Withdraw, Savings, and Chama detail pages. All protected routes redirect to `/login` automatically — unauthenticated users cannot access the dashboard.
+
+> **Auth flow:** Enter phone → receive OTP (printed to server log in dev) → enter code → signed in.
+
+To run both together (backend + frontend) open two terminals:
+
+```bash
+# Terminal 1 — backend
+set -a && source .env && set +a
+go run cmd/server/main.go
+
+# Terminal 2 — frontend
+cd frontend && npm run dev
+```
+
+Then open **http://localhost:3000**.
+
+---
+
+### JSON API Routes
+
+The Go backend exposes these routes for the frontend:
+
+| Method | Path | Auth | Description |
+|--------|------|------|-------------|
+| POST | `/api/auth/request-otp` | — | Send OTP to phone |
+| POST | `/api/auth/verify-otp` | — | Verify OTP, create session |
+| POST | `/api/auth/logout` | — | Clear session |
+| GET | `/api/user` | ✓ | Profile + balance + rate |
+| GET | `/api/user/balance` | ✓ | Balance + BTC/KES rate |
+| GET | `/api/user/transactions` | ✓ | Paginated ledger (`?limit=&offset=`) |
+| GET | `/api/community/stats` | — | Member count, total savings, interest paid |
 
 ---
 
 ### Exposing Webhooks (M-Pesa callbacks)
 
-Safaricom needs a public HTTPS URL to deliver STK Push and B2C callbacks.  
-Use [ngrok](https://ngrok.com) or [Cloudflare Tunnel](https://developers.cloudflare.com/cloudflare-one/connections/connect-networks/) during development:
+Safaricom requires a public HTTPS URL for STK Push and B2C callbacks.  
+Use [ngrok](https://ngrok.com) during development:
 
 ```bash
 ngrok http 8080
@@ -139,7 +185,7 @@ The included `nginx.conf` expects Let's Encrypt certificates at:
 Obtain them with [certbot](https://certbot.eff.org/) before starting nginx, then:
 
 ```bash
-docker compose up -d
+docker compose --profile production up -d
 ```
 
 ## THE RULE EVERY DEVELOPER MUST KNOW
@@ -165,25 +211,22 @@ If either fails, both fail. This is non-negotiable.
 - docs/COMPETITORS.md      Competitor analysis and positioning
 
 ## Structure
-yebobank/
-│
+
+```
+yebo/
 ├── README.md
-├── LICENSE                          ← MIT License
+├── LICENSE
 ├── CONTRIBUTING.md
-├── SECURITY.md                      ← responsible disclosure policy
-├── .github/
-│   ├── ISSUE_TEMPLATE/
-│   │   ├── bug_report.md
-│   │   └── feature_request.md
-│   ├── workflows/
-│   │   ├── ci.yml                   ← go build + go test on every PR
-│   │   ├── security.yml             ← gosec scanner
-│   │   └── docker.yml               ← build + push to GHCR on main
-│   └── pull_request_template.md
+├── SECURITY.md
+├── docker-compose.yml               ← postgres + server + nginx
+├── Dockerfile
+├── nginx.conf                       ← production reverse proxy config
+├── go.mod                           ← zero external dependencies
+├── .env.example
 │
 ├── cmd/
 │   └── server/
-│       └── main.go                  ← entry point, wire everything together
+│       └── main.go                  ← entry point, wires everything together
 │
 ├── internal/
 │   ├── pgdrv/                       ← zero-dependency PostgreSQL wire driver
@@ -193,9 +236,23 @@ yebobank/
 │   │   ├── connection.go            ← pool setup, health check
 │   │   ├── migrations.go            ← auto-run on startup
 │   │   ├── seed.go                  ← default admin + pool settings
-│   │   └── ledger.go                ← CreditSats() DebitSats() — only way to touch balances
+│   │   ├── ledger.go                ← CreditSats() DebitSats() — only way to touch balances
+│   │   └── migrations/              ← SQL files applied at startup (go run)
+│   │       ├── 001_users.sql
+│   │       ├── 002_wallets_ledger.sql
+│   │       ├── 003_savings.sql
+│   │       ├── 004_chamas.sql
+│   │       ├── 005_agents.sql
+│   │       ├── 006_treasury.sql
+│   │       ├── 007_mpesa.sql
+│   │       ├── 008_lightning.sql
+│   │       ├── 009_rates.sql
+│   │       ├── 010_wallets_nullable_user.sql
+│   │       └── 011_otp_requests.sql
 │   │
 │   ├── handlers/
+│   │   ├── api.go                   ← JSON API: OTP auth, user profile, community stats
+│   │   ├── api_ext.go               ← JSON API: chamas, deposit/withdraw, savings
 │   │   ├── auth.go                  ← register, login, logout, session
 │   │   ├── customer.go              ← dashboard, history, settings
 │   │   ├── deposit.go               ← M-Pesa STK Push + Lightning receive
@@ -203,56 +260,57 @@ yebobank/
 │   │   ├── savings.go               ← lock, unlock, early exit, interest view
 │   │   ├── chama.go                 ← group wallet: create, join, contribute, vote
 │   │   ├── agent.go                 ← agent dashboard, cash-in, cash-out, commission
-│   │   ├── global.go                ← LNURL-pay endpoint, payment links
+│   │   ├── global.go                ← LNURL-pay endpoint, Lightning Address
 │   │   ├── admin.go                 ← approvals, customers, settings, distribution
 │   │   ├── trader.go                ← treasury assets, profit log
-│   │   └── webhook.go               ← M-Pesa callback, LND invoice settled
+│   │   ├── webhook.go               ← M-Pesa callback, LND invoice settled
+│   │   └── helpers.go               ← shared template rendering helpers
 │   │
 │   ├── services/
 │   │   ├── mpesa/
 │   │   │   ├── daraja.go            ← HTTP client, token refresh, STK Push
 │   │   │   ├── b2c.go               ← B2C withdrawal to phone
 │   │   │   ├── callback.go          ← validate + parse Safaricom callbacks
-│   │   │   └── idempotency.go       ← receipt → dedup before crediting
+│   │   │   └── idempotency.go       ← receipt dedup before crediting
 │   │   │
 │   │   ├── lightning/
-│   │   │   ├── client.go            ← LND gRPC connection (or REST fallback)
-│   │   │   ├── invoice.go           ← CreateInvoice, DecodeInvoice, WatchInvoice
+│   │   │   ├── client.go            ← LND REST client
+│   │   │   ├── invoice.go           ← CreateInvoice, InvoiceStatus
 │   │   │   ├── payment.go           ← SendPayment, CheckPayment
 │   │   │   └── lnurl.go             ← LNURL-pay spec, Lightning Address
 │   │   │
 │   │   ├── rates/
-│   │   │   ├── feed.go              ← Fetch BTC/KES rate from CoinGecko or LNURL
-│   │   │   └── cache.go             ← In-memory cache, refresh every 60s
+│   │   │   ├── feed.go              ← fetch BTC/KES rate from CoinGecko
+│   │   │   └── cache.go             ← in-memory cache, refresh every 60s
 │   │   │
 │   │   └── interest/
-│   │       ├── engine.go            ← Monthly distribution math
-│   │       └── scheduler.go         ← Goroutine: sleep until 1st of month
+│   │       ├── engine.go            ← monthly distribution math
+│   │       └── scheduler.go         ← goroutine: fires on 1st of month
 │   │
 │   ├── middleware/
-│   │   ├── auth.go                  ← Session validate, role guard, idle timeout
-│   │   └── ratelimit.go             ← Simple token bucket per IP
+│   │   ├── auth.go                  ← session validate, role guard, JSON 401 for API
+│   │   ├── cors.go                  ← CORS headers for Next.js frontend
+│   │   └── ratelimit.go             ← token bucket per IP
 │   │
 │   └── utils/
-│       ├── crypto.go                ← PBKDF2 password hash, token gen, salt gen
+│       ├── crypto.go                ← PBKDF2 password hash, token gen
 │       ├── formatters.go            ← FormatSats, SatsToKES, KESToSats, TimeAgo
-│       └── validators.go            ← Phone, email, amount validation
+│       └── validators.go            ← phone, amount validation
 │
 ├── web/
 │   ├── static/
 │   │   ├── css/
-│   │   │   └── style.css            ← Single file, final, documented below
+│   │   │   └── style.css
 │   │   ├── js/
 │   │   │   ├── app.js               ← KES↔Sats converter, balance toggle
 │   │   │   ├── qr.js                ← QR generation via qrcode.js (CDN)
-│   │   │   └── scanner.js           ← Camera-based QR scan for invoices
+│   │   │   └── scanner.js           ← camera QR scan for invoices
 │   │   └── assets/
-│   │       ├── logo.svg             ← YeboBank mark — documented in §3
-│   │       └── icons/               ← SVG icon set — documented in §3
+│   │       └── logo.svg
 │   │
 │   └── templates/
-│       ├── layout.html              ← Base wrapper
-│       ├── home.html                ← Marketing/landing page (standalone)
+│       ├── layout.html              ← base wrapper
+│       ├── home.html                ← marketing landing page
 │       ├── login.html
 │       ├── register.html
 │       ├── customer/
@@ -286,32 +344,61 @@ yebobank/
 │           └── settings.html
 │
 ├── docs/
-│   ├── database/
-│   │   └── migrations/
-│   │       ├── 001_users.sql
-│   │       ├── 002_wallets_ledger.sql
-│   │       ├── 003_savings.sql
-│   │       ├── 004_chamas.sql
-│   │       ├── 005_agents.sql
-│   │       ├── 006_treasury.sql
-│   │       ├── 007_mpesa.sql
-│   │       ├── 008_lightning.sql
-│   │       └── 009_rates.sql
-│   ├── API.md                       ← All endpoints documented
-│   ├── LIGHTNING_NODE_SETUP.md      ← LND + Voltage.cloud instructions
+│   ├── ARCHITECTURE.md              ← system design, data flow, component diagram
+│   ├── DATABASE.md                  ← schema, migrations, ledger rules
+│   ├── SECURITY.md                  ← password hashing, sessions, rate limiting, TLS
+│   ├── MPESA.md                     ← Daraja API setup, STK Push, B2C, callbacks
 │   ├── MPESA_SETUP.md               ← Daraja sandbox + production guide
-│   ├── DEPLOYMENT.md                ← Docker Compose + bare metal
-│   └── PRODUCT_PROPOSAL.md          ← This document
+│   ├── LIGHTNING.md                 ← LND node setup, Voltage.cloud, LNURL-pay
+│   ├── LIGHTNING_NODE_SETUP.md      ← LND + Voltage.cloud step-by-step
+│   ├── INTEREST.md                  ← interest engine math, scheduler, distribution
+│   ├── DESIGN.md                    ← colors, fonts, shadows, components, mobile
+│   ├── DEPLOYMENT.md                ← Docker Compose, nginx, TLS, production checklist
+│   ├── API.md                       ← all endpoints, request/response, error codes
+│   ├── BITCOIN_COMPLIANCE.md        ← what the Bitcoin whitepaper requires of us
+│   ├── COMPETITORS.md               ← competitor analysis and positioning
+│   ├── CONTRIBUTING.md              ← rules for contributors, branch strategy
+│   ├── PRODUCT_PROPOSAL.md
+│   └── database/
+│       └── migrations/              ← SQL files used by Docker build
+│           ├── 001_users.sql
+│           ├── 002_wallets_ledger.sql
+│           ├── 003_savings.sql
+│           ├── 004_chamas.sql
+│           ├── 005_agents.sql
+│           ├── 006_treasury.sql
+│           ├── 007_mpesa.sql
+│           ├── 008_lightning.sql
+│           ├── 009_rates.sql
+│           ├── 010_wallets_nullable_user.sql
+│           └── 011_otp_requests.sql
 │
-├── scripts/
-│   ├── setup_db.sh                  ← Create postgres user + database
-│   ├── run_dev.sh                   ← Start server with env vars
-│   └── seed_test.sh                 ← Populate test data
+├── frontend/                        ← Next.js 16 customer-facing app
+│   ├── src/
+│   │   ├── proxy.ts                 ← auth guard: redirects unauthenticated users to /login
+│   │   ├── app/
+│   │   │   ├── (auth)/login/        ← phone entry screen
+│   │   │   ├── (auth)/verify/       ← 6-digit OTP entry
+│   │   │   ├── (app)/home/          ← balance card, quick actions, recent transactions
+│   │   │   ├── (app)/send/          ← 3-step send: recipient → amount → confirm
+│   │   │   ├── (app)/deposit/       ← M-Pesa STK Push deposit flow
+│   │   │   ├── (app)/withdraw/      ← M-Pesa B2C withdrawal flow
+│   │   │   ├── (app)/savings/       ← lock savings, view locks, APY display
+│   │   │   ├── (app)/activity/      ← full tx history with search + filters
+│   │   │   ├── (app)/community/     ← community stats, chama list
+│   │   │   ├── (app)/community/chamas/[id]/  ← chama detail: balance, members
+│   │   │   └── (app)/profile/       ← account settings, real logout
+│   │   ├── components/              ← button, card, input, bottom-nav
+│   │   └── lib/                     ← api.ts (typed fetch client), format.ts
+│   ├── .env.local                   ← NEXT_PUBLIC_API_URL=http://localhost:8080
+│   ├── .env.local.example           ← copy this to .env.local
+│   └── package.json
 │
-├── docker-compose.yml               ← postgres + server + nginx
-├── Dockerfile
-├── go.mod                           ← Zero external dependencies
-└── .env.example
+└── scripts/
+    ├── setup_db.sh                  ← create postgres user + database
+    ├── run_dev.sh                   ← load .env and start server
+    └── seed_test.sh                 ← populate test data
+```
 
 ## License
 

@@ -7,10 +7,10 @@ import (
 	"log"
 	"net/http"
 
-	"github.com/altradits/yebo/internal/db"
-	"github.com/altradits/yebo/internal/services/mpesa"
-	"github.com/altradits/yebo/internal/services/rates"
-	"github.com/altradits/yebo/internal/utils"
+	"github.com/yebobank/yebobank/internal/db"
+	"github.com/yebobank/yebobank/internal/services/mpesa"
+	"github.com/yebobank/yebobank/internal/services/rates"
+	"github.com/yebobank/yebobank/internal/utils"
 )
 
 // MpesaSTKCallback handles the M-Pesa STK Push confirmation callback from Safaricom.

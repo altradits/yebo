@@ -83,7 +83,7 @@ func AgentCashIn(w http.ResponseWriter, r *http.Request) {
 
 	tx.Exec(`INSERT INTO agent_transactions (agent_id, customer_wallet, type, amount_sats, commission_sats) VALUES ($1,$2,'cash_in',$3,$4)`,
 		agentID, customerWalletID, amountSats, commissionSats) //nolint:errcheck
-	tx.Commit()                                                 //nolint:errcheck
+	tx.Commit() //nolint:errcheck
 
 	renderTemplate(w, r, "agent/cash_in.html", map[string]interface{}{
 		"Success": fmt.Sprintf("Credited %s to %s", utils.FormatSats(amountSats), customerPhone),
@@ -125,7 +125,7 @@ func AgentCashOut(w http.ResponseWriter, r *http.Request) {
 	}
 	tx.Exec(`INSERT INTO agent_transactions (agent_id, customer_wallet, type, amount_sats) VALUES ($1,$2,'cash_out',$3)`,
 		agentID, customerWalletID, amountSats) //nolint:errcheck
-	tx.Commit()                                //nolint:errcheck
+	tx.Commit() //nolint:errcheck
 
 	renderTemplate(w, r, "agent/cash_out.html", map[string]interface{}{
 		"Success": fmt.Sprintf("Debited %s from %s. Hand over the cash.", utils.FormatSats(amountSats), customerPhone),

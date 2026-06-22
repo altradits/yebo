@@ -10,16 +10,16 @@ import (
 
 // LNURLPayResponse is the first response in the LNURL-pay flow.
 type LNURLPayResponse struct {
-	Callback    string   `json:"callback"`
-	MinSendable int64    `json:"minSendable"` // millisats
-	MaxSendable int64    `json:"maxSendable"` // millisats
-	Metadata    string   `json:"metadata"`
-	Tag         string   `json:"tag"`
+	Callback    string `json:"callback"`
+	MinSendable int64  `json:"minSendable"` // millisats
+	MaxSendable int64  `json:"maxSendable"` // millisats
+	Metadata    string `json:"metadata"`
+	Tag         string `json:"tag"`
 }
 
 // LNURLPayCallbackResponse is the second response containing the invoice.
 type LNURLPayCallbackResponse struct {
-	PR     string `json:"pr"`
+	PR     string        `json:"pr"`
 	Routes []interface{} `json:"routes"`
 }
 
@@ -29,8 +29,8 @@ func HandleLNURLPay(w http.ResponseWriter, r *http.Request, username string) {
 	resp := LNURLPayResponse{
 		Tag:         "payRequest",
 		Callback:    fmt.Sprintf("https://%s/lnurl/pay/%s/callback", domain, username),
-		MinSendable: 1000,            // 1 sat minimum
-		MaxSendable: 10_000_000_000,  // 100,000 sats maximum
+		MinSendable: 1000,           // 1 sat minimum
+		MaxSendable: 10_000_000_000, // 100,000 sats maximum
 		Metadata:    fmt.Sprintf(`[["text/plain","Pay %s via YeboBank"]]`, username),
 	}
 	w.Header().Set("Content-Type", "application/json")

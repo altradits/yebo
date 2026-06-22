@@ -8,8 +8,8 @@ func TestMonthlyInterest(t *testing.T) {
 		rateBPS   int
 		want      int64
 	}{
-		{1_000_000, 1200, 10000},  // 1M sats @ 12% pa = 10k sats/month
-		{100_000, 600, 500},       // 100k sats @ 6% pa = 500 sats/month
+		{1_000_000, 1200, 10000}, // 1M sats @ 12% pa = 10k sats/month
+		{100_000, 600, 500},      // 100k sats @ 6% pa = 500 sats/month
 		{0, 1200, 0},
 		{1_000_000, 0, 0},
 	}

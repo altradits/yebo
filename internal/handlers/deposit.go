@@ -6,12 +6,12 @@ import (
 	"strconv"
 	"time"
 
-	"github.com/altradits/yebo/internal/db"
-	"github.com/altradits/yebo/internal/middleware"
-	"github.com/altradits/yebo/internal/services/lightning"
-	"github.com/altradits/yebo/internal/services/mpesa"
-	"github.com/altradits/yebo/internal/services/rates"
-	"github.com/altradits/yebo/internal/utils"
+	"github.com/yebobank/yebobank/internal/db"
+	"github.com/yebobank/yebobank/internal/middleware"
+	"github.com/yebobank/yebobank/internal/services/lightning"
+	"github.com/yebobank/yebobank/internal/services/mpesa"
+	"github.com/yebobank/yebobank/internal/services/rates"
+	"github.com/yebobank/yebobank/internal/utils"
 )
 
 func Deposit(w http.ResponseWriter, r *http.Request) {

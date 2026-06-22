@@ -20,10 +20,10 @@ func Chama(w http.ResponseWriter, r *http.Request) {
 	`, userID)
 	defer rows.Close()
 	type chama struct {
-		ID          int64
+		ID                 int64
 		Name, Desc, Status string
-		BalanceSats int64
-		Members     int
+		BalanceSats        int64
+		Members            int
 	}
 	var chamas []chama
 	for rows.Next() {
@@ -68,7 +68,7 @@ func ChamaCreate(w http.ResponseWriter, r *http.Request) {
 
 	tx.Exec(`INSERT INTO chama_members (chama_id, user_id, role) VALUES ($1, $2, 'admin')`,
 		chamaID, userID) //nolint:errcheck
-	tx.Commit()          //nolint:errcheck
+	tx.Commit() //nolint:errcheck
 
 	http.Redirect(w, r, "/chama", http.StatusSeeOther)
 }

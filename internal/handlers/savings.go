@@ -24,9 +24,9 @@ func Savings(w http.ResponseWriter, r *http.Request) {
 	defer rows.Close()
 	type lock struct {
 		ID, AmountSats, InterestEarned int64
-		LockDays, RateBPS             int
-		LockedAt, UnlocksAt           string
-		Status                        string
+		LockDays, RateBPS              int
+		LockedAt, UnlocksAt            string
+		Status                         string
 	}
 	var locks []lock
 	for rows.Next() {
@@ -36,9 +36,9 @@ func Savings(w http.ResponseWriter, r *http.Request) {
 	}
 	renderTemplate(w, r, "customer/savings.html", map[string]interface{}{
 		"BalanceSats": bal,
-		"BalanceKES": utils.SatsToKES(bal, btcKES),
-		"BtcKES":    btcKES,
-		"Locks":     locks,
+		"BalanceKES":  utils.SatsToKES(bal, btcKES),
+		"BtcKES":      btcKES,
+		"Locks":       locks,
 	})
 }
 

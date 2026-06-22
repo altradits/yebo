@@ -19,8 +19,8 @@ func Withdraw(w http.ResponseWriter, r *http.Request) {
 	btcKES := rates.Global.GetKES()
 	renderTemplate(w, r, "customer/withdraw.html", map[string]interface{}{
 		"BalanceSats": bal,
-		"BalanceKES": utils.SatsToKES(bal, btcKES),
-		"BtcKES":    btcKES,
+		"BalanceKES":  utils.SatsToKES(bal, btcKES),
+		"BtcKES":      btcKES,
 	})
 }
 

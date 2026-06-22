@@ -7,9 +7,9 @@ import (
 
 // Cache holds the latest BTC/KES rate in memory.
 type Cache struct {
-	mu       sync.RWMutex
-	btcKES   float64
-	btcUSD   float64
+	mu        sync.RWMutex
+	btcKES    float64
+	btcUSD    float64
 	fetchedAt time.Time
 }
 
@@ -33,6 +33,12 @@ func (c *Cache) GetUSD() float64 {
 	c.mu.RLock()
 	defer c.mu.RUnlock()
 	return c.btcUSD
+}
+
+// GetBTCKES is a convenience wrapper for use in handlers.
+func GetBTCKES() (float64, bool) {
+	v := Global.GetKES()
+	return v, v > 0
 }
 
 func (c *Cache) Age() time.Duration {

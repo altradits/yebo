@@ -55,6 +55,16 @@ func GenerateToken() (string, error) {
 	return hex.EncodeToString(b), nil
 }
 
+// GenerateOTP returns a cryptographically random 6-digit numeric code.
+func GenerateOTP() (string, error) {
+	b := make([]byte, 4)
+	if _, err := rand.Read(b); err != nil {
+		return "", err
+	}
+	n := binary.BigEndian.Uint32(b) % 1_000_000
+	return fmt.Sprintf("%06d", n), nil
+}
+
 // deriveKey runs PBKDF2-SHA256 using only stdlib hmac + sha256.
 func deriveKey(password, salt []byte) []byte {
 	prf := hmac.New(sha256.New, password)

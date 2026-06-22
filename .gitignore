@@ -3,6 +3,7 @@
 tls.cert
 tls.key
 /yebobank
+/server
 /tmp/
 *.test
 *.out

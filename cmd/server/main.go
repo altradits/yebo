@@ -10,13 +10,13 @@ import (
 	"syscall"
 	"time"
 
-	"github.com/altradits/yebo/internal/db"
-	"github.com/altradits/yebo/internal/handlers"
-	"github.com/altradits/yebo/internal/middleware"
-	"github.com/altradits/yebo/internal/services/interest"
-	"github.com/altradits/yebo/internal/services/lightning"
-	"github.com/altradits/yebo/internal/services/mpesa"
-	"github.com/altradits/yebo/internal/services/rates"
+	"github.com/yebobank/yebobank/internal/db"
+	"github.com/yebobank/yebobank/internal/handlers"
+	"github.com/yebobank/yebobank/internal/middleware"
+	"github.com/yebobank/yebobank/internal/services/interest"
+	"github.com/yebobank/yebobank/internal/services/lightning"
+	"github.com/yebobank/yebobank/internal/services/mpesa"
+	"github.com/yebobank/yebobank/internal/services/rates"
 )
 
 func main() {
@@ -57,6 +57,12 @@ func main() {
 	staticDir := envOr("STATIC_DIR", filepath.Join("web", "static"))
 	mux.Handle("/static/", http.StripPrefix("/static/", http.FileServer(http.Dir(staticDir))))
 
+	// JSON API — public auth endpoints
+	mux.HandleFunc("/api/auth/request-otp", middleware.IPRateLimit(5)(http.HandlerFunc(handlers.APIRequestOTP)).ServeHTTP)
+	mux.HandleFunc("/api/auth/verify-otp", middleware.IPRateLimit(10)(http.HandlerFunc(handlers.APIVerifyOTP)).ServeHTTP)
+	mux.HandleFunc("/api/auth/logout", handlers.APILogout)
+	mux.HandleFunc("/api/community/stats", handlers.APICommunityStats)
+
 	// Public
 	mux.HandleFunc("/", handlers.Home)
 	mux.HandleFunc("/login", middleware.IPRateLimit(10)(http.HandlerFunc(handlers.Login)).ServeHTTP)
@@ -75,6 +81,19 @@ func main() {
 
 	// Customer (authenticated)
 	auth := middleware.RequireAuth
+
+	// JSON API — authenticated endpoints
+	apiAuth := middleware.RequireAPIAuth
+	mux.Handle("/api/user", apiAuth(http.HandlerFunc(handlers.APIGetUser)))
+	mux.Handle("/api/user/balance", apiAuth(http.HandlerFunc(handlers.APIGetBalance)))
+	mux.Handle("/api/user/transactions", apiAuth(http.HandlerFunc(handlers.APIGetTransactions)))
+	mux.Handle("/api/chamas", apiAuth(http.HandlerFunc(handlers.APIGetChamas)))
+	mux.Handle("/api/chamas/", apiAuth(http.HandlerFunc(handlers.APIGetChama)))
+	mux.Handle("/api/deposit/mpesa", apiAuth(http.HandlerFunc(handlers.APIDepositMpesa)))
+	mux.Handle("/api/withdraw/mpesa", apiAuth(http.HandlerFunc(handlers.APIWithdrawMpesa)))
+	mux.Handle("/api/savings", apiAuth(http.HandlerFunc(handlers.APIGetSavings)))
+	mux.Handle("/api/savings/lock", apiAuth(http.HandlerFunc(handlers.APILockSavings)))
+
 	mux.Handle("/dashboard", auth(http.HandlerFunc(handlers.Dashboard)))
 	mux.Handle("/deposit", auth(http.HandlerFunc(handlers.Deposit)))
 	mux.Handle("/deposit/mpesa", auth(http.HandlerFunc(handlers.DepositMpesa)))
@@ -123,7 +142,7 @@ func main() {
 	port := envOr("PORT", "8080")
 	srv := &http.Server{
 		Addr:         ":" + port,
-		Handler:      mux,
+		Handler:      middleware.CORS(mux),
 		ReadTimeout:  15 * time.Second,
 		WriteTimeout: 30 * time.Second,
 		IdleTimeout:  60 * time.Second,

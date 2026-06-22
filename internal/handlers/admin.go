@@ -4,14 +4,14 @@ import (
 	"net/http"
 	"strconv"
 
-	"github.com/altradits/yebo/internal/db"
-	"github.com/altradits/yebo/internal/middleware"
+	"github.com/yebobank/yebobank/internal/db"
+	"github.com/yebobank/yebobank/internal/middleware"
 )
 
 func AdminDashboard(w http.ResponseWriter, r *http.Request) {
 	var userCount, agentCount, activeLocksCount int
 	var totalBalanceSats int64
-	db.DB.QueryRow(`SELECT COUNT(*) FROM users WHERE role='customer'`).Scan(&userCount)               //nolint:errcheck
+	db.DB.QueryRow(`SELECT COUNT(*) FROM users WHERE role='customer'`).Scan(&userCount)                //nolint:errcheck
 	db.DB.QueryRow(`SELECT COUNT(*) FROM agents WHERE status='active'`).Scan(&agentCount)              //nolint:errcheck
 	db.DB.QueryRow(`SELECT COUNT(*) FROM savings_locks WHERE status='active'`).Scan(&activeLocksCount) //nolint:errcheck
 	db.DB.QueryRow(`SELECT COALESCE(SUM(balance_sats),0) FROM wallets`).Scan(&totalBalanceSats)        //nolint:errcheck
@@ -32,10 +32,10 @@ func AdminCustomers(w http.ResponseWriter, r *http.Request) {
 	`)
 	defer rows.Close()
 	type user struct {
-		ID                            int64
-		Phone, FullName, Role, KYC   string
-		IsActive                      bool
-		BalanceSats                   int64
+		ID                         int64
+		Phone, FullName, Role, KYC string
+		IsActive                   bool
+		BalanceSats                int64
 	}
 	var users []user
 	for rows.Next() {
@@ -69,9 +69,9 @@ func AdminAgents(w http.ResponseWriter, r *http.Request) {
 	`)
 	defer rows.Close()
 	type agent struct {
-		ID                              int64
+		ID                               int64
 		Phone, BizName, Location, Status string
-		FloatSats                       int64
+		FloatSats                        int64
 	}
 	var agents []agent
 	for rows.Next() {
@@ -89,7 +89,7 @@ func AdminApproveAgent(w http.ResponseWriter, r *http.Request) {
 	}
 	agentID := r.FormValue("agent_id")
 	actorID := middleware.UserID(r)
-	db.DB.Exec(`UPDATE agents SET status='active', approved_by=$1, approved_at=NOW() WHERE id=$2`, actorID, agentID) //nolint:errcheck
+	db.DB.Exec(`UPDATE agents SET status='active', approved_by=$1, approved_at=NOW() WHERE id=$2`, actorID, agentID)                        //nolint:errcheck
 	db.DB.Exec(`INSERT INTO audit_log (actor_id, action, target_type, target_id) VALUES ($1,'approve_agent','agent',$2)`, actorID, agentID) //nolint:errcheck
 	http.Redirect(w, r, "/admin/agents", http.StatusSeeOther)
 }

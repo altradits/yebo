@@ -102,12 +102,12 @@ func Dashboard(w http.ResponseWriter, r *http.Request) {
 	}
 
 	renderTemplate(w, r, "customer/dashboard.html", map[string]interface{}{
-		"FullName":   fullName,
-		"Phone":      phone,
+		"FullName":    fullName,
+		"Phone":       phone,
 		"BalanceSats": bal,
-		"BalanceKES": utils.SatsToKES(bal, btcKES),
-		"BtcKES":    btcKES,
-		"Entries":   entries,
+		"BalanceKES":  utils.SatsToKES(bal, btcKES),
+		"BtcKES":      btcKES,
+		"Entries":     entries,
 	})
 }
 
@@ -124,9 +124,9 @@ func History(w http.ResponseWriter, r *http.Request) {
 	}
 	defer rows.Close()
 	type entry struct {
-		AmountSats int64
+		AmountSats                   int64
 		Type, RefID, Note, CreatedAt string
-		IsCredit bool
+		IsCredit                     bool
 	}
 	var entries []entry
 	for rows.Next() {

@@ -11,10 +11,10 @@ import (
 func TraderDashboard(w http.ResponseWriter, r *http.Request) {
 	var totalLocked int64
 	var activeDistributions int
-	db.DB.QueryRow(`SELECT COALESCE(SUM(amount_sats),0) FROM savings_locks WHERE status='active'`).Scan(&totalLocked)           //nolint:errcheck
-	db.DB.QueryRow(`SELECT COUNT(*) FROM interest_distributions WHERE status='complete'`).Scan(&activeDistributions)            //nolint:errcheck
+	db.DB.QueryRow(`SELECT COALESCE(SUM(amount_sats),0) FROM savings_locks WHERE status='active'`).Scan(&totalLocked) //nolint:errcheck
+	db.DB.QueryRow(`SELECT COUNT(*) FROM interest_distributions WHERE status='complete'`).Scan(&activeDistributions)  //nolint:errcheck
 	renderTemplate(w, r, "trader/dashboard.html", map[string]interface{}{
-		"TotalLocked":      totalLocked,
+		"TotalLocked":       totalLocked,
 		"DistributionCount": activeDistributions,
 	})
 }
@@ -23,10 +23,10 @@ func TraderAssets(w http.ResponseWriter, r *http.Request) {
 	rows, _ := db.DB.Query(`SELECT id, name, asset_type, balance_sats, apy_bps FROM treasury_assets ORDER BY id`)
 	defer rows.Close()
 	type asset struct {
-		ID            int64
-		Name, Type    string
-		BalanceSats   int64
-		APYBPS        int
+		ID          int64
+		Name, Type  string
+		BalanceSats int64
+		APYBPS      int
 	}
 	var assets []asset
 	for rows.Next() {
@@ -58,11 +58,11 @@ func TraderProfit(w http.ResponseWriter, r *http.Request) {
 	`)
 	defer rows.Close()
 	type dist struct {
-		RunAt           string
-		TotalLocked     int64
-		TotalInterest   int64
+		RunAt            string
+		TotalLocked      int64
+		TotalInterest    int64
 		AccountsCredited int
-		RateBPS         int
+		RateBPS          int
 	}
 	var dists []dist
 	for rows.Next() {
